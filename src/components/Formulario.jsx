@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Alerta from './Alerta';
+import generarID from '../utils/generarID';
 
-const Formulario = ({ pacientes, setPacientes }) => {
+const Formulario = ({ pacientes, setPacientes, paciente, setPaciente }) => {
   //Definir el estado del nombre, propietario, email, alta, sintomas
   const [nombre, setNombre] = useState('');
   const [propietario, setPropietario] = useState('');
@@ -11,6 +12,22 @@ const Formulario = ({ pacientes, setPacientes }) => {
 
   const [alerta, setAlerta] = useState({});
 
+  useEffect(() => {
+    if (paciente.id) {
+      setNombre(paciente.nombre);
+      setPropietario(paciente.propietario);
+      setEmail(paciente.email);
+      setAlta(paciente.alta);
+      setSintomas(paciente.sintomas);
+    } else {
+      setNombre('');
+      setPropietario('');
+      setEmail('');
+      setAlta('');
+      setSintomas('');
+    }
+  }, [paciente]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -19,11 +36,29 @@ const Formulario = ({ pacientes, setPacientes }) => {
       setAlerta({ msg: 'Todos los campos son obligatorios', error: true });
       return;
     }
-    
+
     //Crear nuevo objeto de paciente
-    const paciente = { nombre, propietario, email, alta, sintomas };
-    //Enviarlo al state
-    setPacientes([...pacientes, paciente]);
+    const objPaciente = {
+      nombre,
+      propietario,
+      email,
+      alta,
+      sintomas,
+    };
+
+    if (paciente.id) {
+      //Editar paciente existente
+      objPaciente.id = paciente.id;
+      const pacientesActualizados = pacientes.map((pac) =>
+        pac.id === objPaciente.id ? objPaciente : pac
+      );
+      setPacientes(pacientesActualizados);
+    } else {
+      //Nuevo registro
+      objPaciente.id = generarID();
+      setPacientes([...pacientes, objPaciente]);
+    }
+
     //Reiniciar el form
     setNombre('');
     setPropietario('');
@@ -31,12 +66,14 @@ const Formulario = ({ pacientes, setPacientes }) => {
     setAlta('');
     setSintomas('');
 
+    setPaciente({});
+
     //Mostrar alerta
     setAlerta({ msg: 'Paciente agregado', error: false });
 
     setTimeout(() => {
       setAlerta({});
-    }, timeout);
+    }, 3000);
   };
 
   const { msg } = alerta;
@@ -142,7 +179,7 @@ const Formulario = ({ pacientes, setPacientes }) => {
 
         <input
           type="submit"
-          value="Agregar paciente"
+          value={paciente.id ? 'Editar Paciente' : 'Agregar Paciente'}
           className=" bg-indigo-600 w-full p-3 text-white uppercase font-bold rounded-md hover:bg-indigo-700 cursor-pointer transition-colors mb-5"
         />
         {msg && <Alerta alerta={alerta} />}
